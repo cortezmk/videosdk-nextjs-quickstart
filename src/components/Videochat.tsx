@@ -1,13 +1,13 @@
 "use client";
 
-import { CSSProperties, useRef, useState } from "react";
+import { CSSProperties, useRef, useState, useEffect } from "react";
 import ZoomVideo, {
   type VideoClient,
   VideoQuality,
   type VideoPlayer,
 } from "@zoom/videosdk";
 import { CameraButton, MicButton } from "./MuteButtons";
-import { PhoneOff } from "lucide-react";
+import { PhoneOff, ScreenShare } from "lucide-react";
 import { Button } from "./ui/button";
 
 const Videochat = (props: { slug: string; JWT: string }) => {
@@ -18,6 +18,10 @@ const Videochat = (props: { slug: string; JWT: string }) => {
   const [isVideoMuted, setIsVideoMuted] = useState(!client.current.getCurrentUserInfo()?.bVideoOn);
   const [isAudioMuted, setIsAudioMuted] = useState(client.current.getCurrentUserInfo()?.muted ?? true);
   const videoContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    joinSession();
+  });
 
   const joinSession = async () => {
     await client.current.init("en-US", "Global", { patchJsMedia: true });
@@ -42,6 +46,13 @@ const Videochat = (props: { slug: string; JWT: string }) => {
       const userVideo = await mediaStream.attachVideo(event.userId, VideoQuality.Video_360P);
       videoContainerRef.current!.appendChild(userVideo as VideoPlayer);
     }
+  };
+
+  const startSharing = async () => {
+    const mediaStream = client.current.getMediaStream();
+    const shareVideo = document.createElement('video') as HTMLVideoElement;
+    videoContainerRef.current!.appendChild(shareVideo);
+    await mediaStream.startShareScreen(shareVideo);
   };
 
   const leaveSession = async () => {
@@ -84,6 +95,9 @@ const Videochat = (props: { slug: string; JWT: string }) => {
               client={client}
               setIsAudioMuted={setIsAudioMuted}
             />
+            <Button onClick={startSharing} title="start sharing">
+              <ScreenShare />
+            </Button>
             <Button onClick={leaveSession} title="leave session">
               <PhoneOff />
             </Button>

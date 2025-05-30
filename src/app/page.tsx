@@ -3,11 +3,14 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Home() {
   const [sessionName, setSessionName] = useState("");
   const router = useRouter();
+
+  useEffect(() => { router.push(`/call/test-session`); });
+
   return (
     <main className="flex flex-col items-center justify-between p-24">
       <h1 className="text-3xl font-bold text-center my-4">
