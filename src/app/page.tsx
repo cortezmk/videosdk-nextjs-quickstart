@@ -12,7 +12,7 @@ export default function Home() {
   useEffect(() => { router.push(`/call/receive`); });
 
   return (
-    <main className="flex flex-col items-center justify-between p-24">
+    <div>
       <h1 className="text-3xl font-bold text-center my-4">
         Zoom VideoSDK Next.js Quickstart
       </h1>
@@ -30,6 +30,6 @@ export default function Home() {
       >
         Create Session
       </Button>
-    </main>
+    </div>
   );
 }

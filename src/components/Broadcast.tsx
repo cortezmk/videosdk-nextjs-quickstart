@@ -10,9 +10,10 @@ import { CameraButton, MicButton } from "./MuteButtons";
 import { PhoneOff, ScreenShare } from "lucide-react";
 import { Button } from "./ui/button";
 
-const Videochat = (props: { slug: string; JWT: string }) => {
+const Videochat = (props: { slug: string; JWT: string; userName: string }) => {
   const session = props.slug;
   const jwt = props.JWT;
+  const userName = props.userName;
   const [inSession, setInSession] = useState(false);
   const client = useRef<typeof VideoClient>(ZoomVideo.createClient());
   const [isVideoMuted, setIsVideoMuted] = useState(!client.current.getCurrentUserInfo()?.bVideoOn);
@@ -36,7 +37,9 @@ const Videochat = (props: { slug: string; JWT: string }) => {
     // setIsVideoMuted(!mediaStream.isCapturingVideo());
     // await renderVideo({ action: "Start", userId: client.current.getCurrentUserInfo().userId, });
     setTimeout(async () => {
+      console.log(`broadcast ${session}: before startSharing`);
       await startSharing();
+      console.log(`broadcast ${session}: after startSharing`);
     }, 3000);
   };
 
@@ -122,5 +125,3 @@ const videoPlayerStyle = {
   borderRadius: "10px",
   overflow: "hidden",
 } as CSSProperties;
-
-const userName = `User-${new Date().getTime().toString().slice(8)}`;

@@ -102,3 +102,8 @@ video-player-container canvas {
   aspect-ratio: 16/9;
 }
 
+video-player-container div {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16/9;
+}
