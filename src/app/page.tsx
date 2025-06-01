@@ -9,7 +9,7 @@ export default function Home() {
   const [sessionName, setSessionName] = useState("");
   const router = useRouter();
 
-  useEffect(() => { router.push(`/call/test-session`); });
+  useEffect(() => { router.push(`/call/receive`); });
 
   return (
     <main className="flex flex-col items-center justify-between p-24">

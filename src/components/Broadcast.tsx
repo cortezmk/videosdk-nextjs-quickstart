@@ -10,87 +10,42 @@ import { CameraButton, MicButton } from "./MuteButtons";
 import { PhoneOff, ScreenShare } from "lucide-react";
 import { Button } from "./ui/button";
 
-const Videochat = (props: { slug: string; JWT: string; mode?: 'broadcast' | 'receive' }) => {
+const Videochat = (props: { slug: string; JWT: string }) => {
   const session = props.slug;
   const jwt = props.JWT;
   const [inSession, setInSession] = useState(false);
-  // const [shownUsers, setShownUsers] = useState<number[]>([]);
   const client = useRef<typeof VideoClient>(ZoomVideo.createClient());
   const [isVideoMuted, setIsVideoMuted] = useState(!client.current.getCurrentUserInfo()?.bVideoOn);
   const [isAudioMuted, setIsAudioMuted] = useState(client.current.getCurrentUserInfo()?.muted ?? true);
   const videoContainerRef = useRef<HTMLDivElement>(null);
-  const activeUsersRef = useRef<number[]>([]);
-  const shareVideoCanvasRef = useRef<HTMLCanvasElement>(null);
-  const shareMyVideoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     joinSession();
   });
 
   const joinSession = async () => {
-    if(inSession)
-      return;
     await client.current.init("en-US", "Global", { patchJsMedia: true });
-    console.log("after init");
-    client.current.on("peer-video-state-change", renderVideo);
-    console.log("before join");
+    // client.current.on("peer-video-state-change", renderVideo);
     await client.current.join(session, jwt, userName)
       .catch((e) => console.log(e));
-    console.log("after join");
     setInSession(true);
-    console.log("after setInSession");
-    const mediaStream = client.current.getMediaStream();
-    console.log("after getMediaStream");
+    // const mediaStream = client.current.getMediaStream();
+    // await mediaStream.startAudio();
+    // setIsAudioMuted(mediaStream.isAudioMuted());
+    // await mediaStream.startVideo();
+    // setIsVideoMuted(!mediaStream.isCapturingVideo());
+    // await renderVideo({ action: "Start", userId: client.current.getCurrentUserInfo().userId, });
     setTimeout(async () => {
-      console.log("before startAudio");
-      await mediaStream.startAudio();
-      console.log("after startAudio");
-      setIsAudioMuted(mediaStream.isAudioMuted());
-      console.log("before startVideo");
-      await mediaStream.startVideo();
-      console.log("after startVideo");
-      client.current.on('active-share-change', renderShareVideo);
-      console.log("after active-share-change");
-      setIsVideoMuted(!mediaStream.isCapturingVideo());
-      console.log("before renderVideo");
-      await renderVideo({ action: "Start", userId: client.current.getCurrentUserInfo().userId, });
-      console.log("after renderVideo");
-    }, 2000);
-    // setTimeout(async () => {
-    //   await startSharing();
-    // }, 3000);
-    
-
+      await startSharing();
+    }, 3000);
   };
-
-  const renderShareVideo = async (payload: { state: "Active" | "Inactive"; userId: number; }) => {
-    if(!shareVideoCanvasRef.current) {
-      const shareView = document.createElement('canvas') as HTMLCanvasElement;
-      shareVideoCanvasRef.current = shareView;
-      videoContainerRef.current!.appendChild(shareView);
-    }
-    const mediaStream = client.current.getMediaStream();
-    if (payload.state === 'Active') {
-      mediaStream.startShareView(
-        shareVideoCanvasRef.current,
-        payload.userId
-      )
-    } else if (payload.state === 'Inactive') {
-      mediaStream.stopShareView()
-    }
-  }
 
   const renderVideo = async (event: { action: "Start" | "Stop"; userId: number; }) => {
     const mediaStream = client.current.getMediaStream();
-
     if (event.action === "Stop") {
       const element = await mediaStream.detachVideo(event.userId);
       Array.isArray(element) ? element.forEach((el) => el.remove()) : element.remove();
     } else {
-      if (activeUsersRef.current.includes(event.userId))
-        return;
-      activeUsersRef.current.push(event.userId);
-      console.log(`Added ${event.userId} to shownUsers`);
       const userVideo = await mediaStream.attachVideo(event.userId, VideoQuality.Video_360P);
       videoContainerRef.current!.appendChild(userVideo as VideoPlayer);
     }
@@ -98,12 +53,9 @@ const Videochat = (props: { slug: string; JWT: string; mode?: 'broadcast' | 'rec
 
   const startSharing = async () => {
     const mediaStream = client.current.getMediaStream();
-    if(!shareMyVideoRef.current) {
-      const shareVideo = document.createElement('video') as HTMLVideoElement;
-      shareMyVideoRef.current = shareVideo;
-      videoContainerRef.current!.appendChild(shareVideo);
-    }
-    await mediaStream.startShareScreen(shareMyVideoRef.current as HTMLVideoElement);
+    const shareVideo = document.createElement('video') as HTMLVideoElement;
+    videoContainerRef.current!.appendChild(shareVideo);
+    await mediaStream.startShareScreen(shareVideo);
   };
 
   const leaveSession = async () => {
@@ -125,7 +77,7 @@ const Videochat = (props: { slug: string; JWT: string; mode?: 'broadcast' | 'rec
         {/* @ts-expect-error html component */}
         <video-player-container ref={videoContainerRef} style={videoPlayerStyle} />
       </div>
-      {!inSession ? (
+      {/* {!inSession ? (
         <div className="mx-auto flex w-64 flex-col self-center">
           <div className="w-4" />
           <Button className="flex flex-1" onClick={joinSession} title="join session">
@@ -154,10 +106,7 @@ const Videochat = (props: { slug: string; JWT: string; mode?: 'broadcast' | 'rec
             </Button>
           </div>
         </div>
-      )}
-      { props.mode && (
-        <iframe src={`http://localhost:3000/${props.mode}`}></iframe>
-      )}
+      )} */}
     </div>
   );
 };

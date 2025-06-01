@@ -10,7 +10,7 @@ import { CameraButton, MicButton } from "./MuteButtons";
 import { PhoneOff, ScreenShare } from "lucide-react";
 import { Button } from "./ui/button";
 
-const Videochat = (props: { slug: string; JWT: string; mode?: 'broadcast' | 'receive' }) => {
+const Videochat = (props: { slug: string; JWT: string }) => {
   const session = props.slug;
   const jwt = props.JWT;
   const [inSession, setInSession] = useState(false);
@@ -31,30 +31,30 @@ const Videochat = (props: { slug: string; JWT: string; mode?: 'broadcast' | 'rec
     if(inSession)
       return;
     await client.current.init("en-US", "Global", { patchJsMedia: true });
-    console.log("after init");
-    client.current.on("peer-video-state-change", renderVideo);
-    console.log("before join");
+    console.log("receive: after init");
+    // client.current.on("peer-video-state-change", renderVideo);
+    console.log("receive: before join");
     await client.current.join(session, jwt, userName)
       .catch((e) => console.log(e));
-    console.log("after join");
+    console.log("receive: after join");
     setInSession(true);
-    console.log("after setInSession");
+    console.log("receive: after setInSession");
     const mediaStream = client.current.getMediaStream();
-    console.log("after getMediaStream");
+    console.log("receive: after getMediaStream");
     setTimeout(async () => {
-      console.log("before startAudio");
-      await mediaStream.startAudio();
-      console.log("after startAudio");
-      setIsAudioMuted(mediaStream.isAudioMuted());
-      console.log("before startVideo");
-      await mediaStream.startVideo();
-      console.log("after startVideo");
+      // console.log("receive: before startAudio");
+      // await mediaStream.startAudio();
+      // console.log("receive: after startAudio");
+      // setIsAudioMuted(mediaStream.isAudioMuted());
+      // console.log("receive: before startVideo");
+      // await mediaStream.startVideo();
+      // console.log("receive: after startVideo");
       client.current.on('active-share-change', renderShareVideo);
-      console.log("after active-share-change");
-      setIsVideoMuted(!mediaStream.isCapturingVideo());
-      console.log("before renderVideo");
-      await renderVideo({ action: "Start", userId: client.current.getCurrentUserInfo().userId, });
-      console.log("after renderVideo");
+      console.log("receive: after active-share-change");
+      // setIsVideoMuted(!mediaStream.isCapturingVideo());
+      // console.log("before renderVideo");
+      // await renderVideo({ action: "Start", userId: client.current.getCurrentUserInfo().userId });
+      // console.log("after renderVideo");
     }, 2000);
     // setTimeout(async () => {
     //   await startSharing();
@@ -125,7 +125,7 @@ const Videochat = (props: { slug: string; JWT: string; mode?: 'broadcast' | 'rec
         {/* @ts-expect-error html component */}
         <video-player-container ref={videoContainerRef} style={videoPlayerStyle} />
       </div>
-      {!inSession ? (
+      {/* {!inSession ? (
         <div className="mx-auto flex w-64 flex-col self-center">
           <div className="w-4" />
           <Button className="flex flex-1" onClick={joinSession} title="join session">
@@ -154,10 +154,7 @@ const Videochat = (props: { slug: string; JWT: string; mode?: 'broadcast' | 'rec
             </Button>
           </div>
         </div>
-      )}
-      { props.mode && (
-        <iframe src={`http://localhost:3000/${props.mode}`}></iframe>
-      )}
+      )} */}
     </div>
   );
 };
