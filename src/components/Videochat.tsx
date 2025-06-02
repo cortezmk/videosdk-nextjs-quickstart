@@ -24,6 +24,7 @@ const Videochat = (props: { slug: string; JWT: string; userName: string }) => {
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const activeUsersRef = useRef<number[]>([]);
   const shareVideoCanvasRefs = useRef<ShareRefs>({});
+  const sessionState = useRef<boolean>(false);
   const shareMyVideoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -31,9 +32,13 @@ const Videochat = (props: { slug: string; JWT: string; userName: string }) => {
   });
 
   const joinSession = async () => {
+    if (sessionState.current) {
+      return;
+    }
+    sessionState.current = true;
     if(inSession)
       return;
-    await client.current.init("en-US", "Global", { patchJsMedia: true });
+    await client.current.init("en-US", "Global", { patchJsMedia: true, leaveOnPageUnload: true });
     console.log("after init");
     client.current.on("peer-video-state-change", renderVideo);
     console.log("before join");

@@ -13,15 +13,32 @@ const Videochat = (props: { slug: string; JWT: string; userName: string }) => {
   const [inSession, setInSession] = useState(false);
   const client = useRef<typeof VideoClient>(ZoomVideo.createClient());
   const shareVideoCanvasRef = useRef<HTMLCanvasElement>(null);
+  const sessionState = useRef<boolean>(false);
 
   useEffect(() => {
     joinSession();
   });
 
+  const renderAlreadyActiveUsers = async () => {
+    const stream = client.current.getMediaStream()
+    client.current.getAllUser().forEach((user) => {
+      if (user.sharerOn) {
+        stream.startShareView(
+          shareVideoCanvasRef.current as HTMLCanvasElement,
+          user.userId
+        );
+      }
+    });
+  }
+
   const joinSession = async () => {
+    if (sessionState.current) {
+      return;
+    }
+    sessionState.current = true;
     if(inSession)
       return;
-    await client.current.init("en-US", "Global", { patchJsMedia: true });
+    await client.current.init("en-US", "Global", { patchJsMedia: true, leaveOnPageUnload: true });
     console.log(`receive ${session}: after init`);
     console.log(`receive ${session}: before join`);
     await client.current.join(session, jwt, userName)
@@ -30,6 +47,7 @@ const Videochat = (props: { slug: string; JWT: string; userName: string }) => {
     setInSession(true);
     console.log(`receive ${session}: after setInSession`);
     setTimeout(async () => {
+      await renderAlreadyActiveUsers();
       client.current.on('active-share-change', renderShareVideo);
       console.log(`receive ${session}: after active-share-change`);
     }, 2000);
@@ -41,9 +59,9 @@ const Videochat = (props: { slug: string; JWT: string; userName: string }) => {
       mediaStream.startShareView(
         shareVideoCanvasRef.current as HTMLCanvasElement,
         payload.userId
-      )
+      );
     } else if (payload.state === 'Inactive') {
-      mediaStream.stopShareView()
+      mediaStream.stopShareView();
     }
   }
 
