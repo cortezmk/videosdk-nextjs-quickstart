@@ -95,7 +95,7 @@ const Videochat = (props: { slug: string; JWT: string; userName: string }) => {
       return;
     shareVideoCanvasRefs.current[userName]?.remove();
     delete shareVideoCanvasRefs.current[userName];
-  }
+  } //change
 
   const renderVideo = async (event: { action: "Start" | "Stop"; userId: number; }) => {
     const mediaStream = client.current.getMediaStream();
