@@ -10,6 +10,7 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { CameraButton, MicButton } from "./MuteButtons";
 import { PhoneOff, ScreenShare } from "lucide-react";
 import { Button } from "./ui/button";
+import settings from "./settings";
 
 type ShareRefs = { [key: string]: HTMLDivElement };
 
@@ -25,7 +26,6 @@ const Videochat = (props: { slug: string; JWT: string; userName: string }) => {
   const activeUsersRef = useRef<number[]>([]);
   const shareVideoCanvasRefs = useRef<ShareRefs>({});
   const sessionState = useRef<boolean>(false);
-  const shareMyVideoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     joinSession();
@@ -57,37 +57,13 @@ const Videochat = (props: { slug: string; JWT: string; userName: string }) => {
       console.log("before startVideo");
       await mediaStream.startVideo();
       console.log("after startVideo");
-      // client.current.on('active-share-change', renderShareVideo);
       console.log("after active-share-change");
       setIsVideoMuted(!mediaStream.isCapturingVideo());
       console.log("before renderVideo");
       await renderVideo({ action: "Start", userId: client.current.getCurrentUserInfo().userId, });
       console.log("after renderVideo");
-      // broadcastShareVideo();
     }, 2000);
-    // setTimeout(async () => {
-    //   await startSharing();
-    // }, 3000);
-    
-
   };
-
-  // const renderShareVideo = async (payload: { state: "Active" | "Inactive"; userId: number; }) => {
-  //   if(!shareVideoCanvasRef.current) {
-  //     const shareView = document.createElement('canvas') as HTMLCanvasElement;
-  //     shareVideoCanvasRef.current = shareView;
-  //     videoContainerRef.current!.appendChild(shareView);
-  //   }
-  //   const mediaStream = client.current.getMediaStream();
-  //   if (payload.state === 'Active') {
-  //     mediaStream.startShareView(
-  //       shareVideoCanvasRef.current,
-  //       payload.userId
-  //     )
-  //   } else if (payload.state === 'Inactive') {
-  //     mediaStream.stopShareView()
-  //   }
-  // }
 
   const getUserName = (userId: number) => {
     return client.current.getAllUser().find(user => user.userId === userId)?.displayName;
@@ -99,7 +75,7 @@ const Videochat = (props: { slug: string; JWT: string; userName: string }) => {
       return;
     const div = document.createElement('div');
     const iframe = document.createElement('iframe');
-    iframe.src = `http://localhost:3000/receive/${getUserName(userId)}`;
+    iframe.src = `${settings.serviceUrl}/receive/${getUserName(userId)}`;
     div.appendChild(iframe);
     shareVideoCanvasRefs.current[userName] = div;
     videoContainerRef.current!.appendChild(div);
@@ -119,7 +95,7 @@ const Videochat = (props: { slug: string; JWT: string; userName: string }) => {
       return;
     const div = document.createElement('div');
     const iframe = document.createElement('iframe');
-    iframe.src = `http://localhost:3000/broadcast/${userName}`;
+    iframe.src = `${settings.serviceUrl}/broadcast/${userName}`;
     div.style.width = "1px";
     div.style.height = "1px";
     div.style.position = "absolute";
@@ -149,16 +125,6 @@ const Videochat = (props: { slug: string; JWT: string; userName: string }) => {
     }
   };
 
-  // const startSharing = async () => {
-  //   const mediaStream = client.current.getMediaStream();
-  //   if(!shareMyVideoRef.current) {
-  //     const shareVideo = document.createElement('video') as HTMLVideoElement;
-  //     shareMyVideoRef.current = shareVideo;
-  //     videoContainerRef.current!.appendChild(shareVideo);
-  //   }
-  //   await mediaStream.startShareScreen(shareMyVideoRef.current as HTMLVideoElement);
-  // };
-
   const leaveSession = async () => {
     client.current.off("peer-video-state-change", renderVideo);
     await client.current.leave().catch((e) => console.log("leave error", e));
@@ -168,7 +134,7 @@ const Videochat = (props: { slug: string; JWT: string; userName: string }) => {
 
   return (
     <div className="flex h-full w-full flex-1 flex-col">
-      <iframe style={{ position: "absolute", top: 0, left: 0, width: "100px", height: "100px" }} src={`http://localhost:3000/broadcast/${userName}`}></iframe>
+      <iframe style={{ position: "absolute", top: 0, left: 0, width: "100px", height: "100px" }} src={`${settings.serviceUrl}/broadcast/${userName}`}></iframe>
       <h1 className="text-center text-3xl font-bold mb-4 mt-0">
         Session: {session}
       </h1>

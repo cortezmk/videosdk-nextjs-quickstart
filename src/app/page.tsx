@@ -9,17 +9,12 @@ export default function Home() {
   const [sessionName, setSessionName] = useState("");
   const router = useRouter();
 
-  useEffect(() => { router.push(`/call/receive`); });
-
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-center my-4">
-        Zoom VideoSDK Next.js Quickstart
-      </h1>
+    <main className="flex min-h-screen flex-col items-center p-24">
       <Input
         type="text"
         className="w-full max-w-xs"
-        placeholder="Session Name"
+        placeholder="Your nick"
         value={sessionName}
         onChange={(e) => setSessionName(e.target.value)}
       />
@@ -28,8 +23,8 @@ export default function Home() {
         disabled={!sessionName}
         onClick={() => router.push(`/call/${sessionName}`)}
       >
-        Create Session
+        Join
       </Button>
-    </div>
+    </main>
   );
 }

@@ -46,7 +46,6 @@ const Videochat = (props: { slug: string; JWT: string; userName: string }) => {
 
   return (
     <div className="flex h-full w-full flex-1 flex-col">
-      {/* <iframe style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: "1" }} src={`http://localhost:3000/call/${userName}`}></iframe> */}
       <video ref={videoContainerRef} style={videoPlayerStyle} />
     </div>
   );
