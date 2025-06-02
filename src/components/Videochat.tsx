@@ -60,10 +60,18 @@ const Videochat = (props: { slug: string; JWT: string; userName: string }) => {
       console.log("after active-share-change");
       setIsVideoMuted(!mediaStream.isCapturingVideo());
       console.log("before renderVideo");
-      await renderVideo({ action: "Start", userId: client.current.getCurrentUserInfo().userId, });
+      await addAlreadyActiveUsers();
+      await renderVideo({ action: "Start", userId: client.current.getCurrentUserInfo().userId });
       console.log("after renderVideo");
     }, 2000);
   };
+
+  const addAlreadyActiveUsers = async () => {
+    client.current.getAllUser().forEach(async (user) => {
+      console.log(`renderVideo: ${user.userId}`);
+      await renderVideo({ action: user.sharerOn ? "Start" : "Stop", userId: user.userId });
+    });
+  }
 
   const getUserName = (userId: number) => {
     return client.current.getAllUser().find(user => user.userId === userId)?.displayName;
@@ -85,32 +93,19 @@ const Videochat = (props: { slug: string; JWT: string; userName: string }) => {
     const userName = getUserName(userId);
     if(!userName)
       return;
-    shareVideoCanvasRefs.current[userName].remove();
+    shareVideoCanvasRefs.current[userName]?.remove();
     delete shareVideoCanvasRefs.current[userName];
-  }
-
-  const broadcastShareVideo = () => {
-    const userName = client.current.getCurrentUserInfo().displayName;
-    if(!userName)
-      return;
-    const div = document.createElement('div');
-    const iframe = document.createElement('iframe');
-    iframe.src = `${settings.serviceUrl}/broadcast/${userName}`;
-    div.style.width = "1px";
-    div.style.height = "1px";
-    div.style.position = "absolute";
-    div.style.top = "0";
-    div.style.left = "0";
-    div.style.zIndex = "-1";
-    document.body.appendChild(div);
   }
 
   const renderVideo = async (event: { action: "Start" | "Stop"; userId: number; }) => {
     const mediaStream = client.current.getMediaStream();
     if (event.action === "Stop") {
+      if(!activeUsersRef.current.includes(event.userId))
+        return;
       const element = await mediaStream.detachVideo(event.userId);
-      Array.isArray(element) ? element.forEach((el) => el.remove()) : element.remove();
+      Array.isArray(element) ? element.forEach((el) => el?.remove()) : element?.remove();
       removeShareVideoDisplay(event.userId);
+      activeUsersRef.current = activeUsersRef.current.filter(id => id !== event.userId);
     } else {
       if (activeUsersRef.current.includes(event.userId))
         return;
