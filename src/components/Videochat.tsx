@@ -87,7 +87,7 @@ const Videochat = (props: { slug: string; JWT: string; userName: string }) => {
       return;
     shareVideoCanvasRefs.current[userName].remove();
     delete shareVideoCanvasRefs.current[userName];
-  }
+  } //change
 
   const broadcastShareVideo = () => {
     const userName = client.current.getCurrentUserInfo().displayName;
