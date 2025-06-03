@@ -7,11 +7,12 @@ import ZoomVideo, {
   type VideoPlayer,
 } from "@zoom/videosdk";
 import { CameraButton, MicButton } from "./MuteButtons";
-import { PhoneOff } from "lucide-react";
+import { PhoneOff, ScreenShare } from "lucide-react";
 import { Button } from "./ui/button";
 
 const Videochat = (props: { slug: string; JWT: string }) => {
-  const session = props.slug;
+  const session = 'main-session';
+  const userName = props.slug;
   const jwt = props.JWT;
   const [inSession, setInSession] = useState(false);
   const client = useRef<typeof VideoClient>(ZoomVideo.createClient());
@@ -20,7 +21,7 @@ const Videochat = (props: { slug: string; JWT: string }) => {
   const videoContainerRef = useRef<HTMLDivElement>(null);
 
   const joinSession = async () => {
-    await client.current.init("en-US", "Global", { patchJsMedia: true });
+    await client.current.init("en-US", "Global", { patchJsMedia: true, leaveOnPageUnload: true });
     client.current.on("peer-video-state-change", renderVideo);
     await client.current.join(session, jwt, userName)
       .catch((e) => console.log(e));
@@ -87,6 +88,9 @@ const Videochat = (props: { slug: string; JWT: string }) => {
             <Button onClick={leaveSession} title="leave session">
               <PhoneOff />
             </Button>
+            <Button onClick={leaveSession} title="">
+              <ScreenShare />
+            </Button>
           </div>
         </div>
       )}
@@ -105,5 +109,3 @@ const videoPlayerStyle = {
   borderRadius: "10px",
   overflow: "hidden",
 } as CSSProperties;
-
-const userName = `User-${new Date().getTime().toString().slice(8)}`;
