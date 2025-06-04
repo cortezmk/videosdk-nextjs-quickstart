@@ -5,6 +5,9 @@ import ZoomVideo, {
   type VideoClient,
   VideoQuality,
   type VideoPlayer,
+  type Stream,
+  type ProcessorParams,
+  Processor
 } from "@zoom/videosdk";
 import { CameraButton, MicButton } from "./MuteButtons";
 import { PhoneOff, ScreenShare } from "lucide-react";
@@ -18,7 +21,43 @@ const Videochat = (props: { slug: string; JWT: string }) => {
   const client = useRef<typeof VideoClient>(ZoomVideo.createClient());
   const [isVideoMuted, setIsVideoMuted] = useState(!client.current.getCurrentUserInfo()?.bVideoOn);
   const [isAudioMuted, setIsAudioMuted] = useState(client.current.getCurrentUserInfo()?.muted ?? true);
+  const [isShareVideo, setIsShareVideo] = useState(false);
   const videoContainerRef = useRef<HTMLDivElement>(null);
+  const shareVideoInterval = useRef<NodeJS.Timeout | null>(null);
+  const videoProcessor = useRef<any>(null);
+  const activeUsersRef = useRef<number[]>([]);
+
+  const startShareVideo = async () => {
+    const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+    const video = document.getElementById('video-me') as HTMLVideoElement;
+    video.srcObject = stream;
+    video.play();
+    return video;
+  }
+
+  const addShareVideoProcessor = async () => {
+    const stream = client.current.getMediaStream();
+    const video = await startShareVideo();
+    const params: ProcessorParams = {
+      name: "share-video-processor",
+      type: "video",
+      url: window.location.origin + "/lib/share-video-processor.js",
+      options: {},
+    };
+    const processor = await stream.createProcessor(params);
+    videoProcessor.current = processor;
+    const canvas = new OffscreenCanvas(1280, 720); //document.getElementById('canvas-me') as HTMLCanvasElement;
+    canvas.width = 1280;  // Set width to 1080p
+    canvas.height = 720;  //new OffscreenCanvas(1920, 1080);
+    const ctx = canvas.getContext('2d');
+    const refreshRate = 1000/20;
+    setInterval(async () => {
+      ctx!.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const bitmap = await createImageBitmap(canvas);
+      processor.port.postMessage({ cmd: 'update_shared_video_frame', data: bitmap });
+    }, refreshRate);
+    await stream.addProcessor(processor);
+  }
 
   const joinSession = async () => {
     await client.current.init("en-US", "Global", { patchJsMedia: true, leaveOnPageUnload: true });
@@ -31,16 +70,33 @@ const Videochat = (props: { slug: string; JWT: string }) => {
     setIsAudioMuted(mediaStream.isAudioMuted());
     await mediaStream.startVideo();
     setIsVideoMuted(!mediaStream.isCapturingVideo());
-    await renderVideo({ action: "Start", userId: client.current.getCurrentUserInfo().userId, });
+    // await renderVideo({ action: "Start", userId: client.current.getCurrentUserInfo().userId, });
+    await addActiveUsers();
   };
+
+  const addActiveUsers = async () => {
+    client.current.getAllUser().forEach(async (user) => {
+      if (user.bVideoOn) {
+        await renderVideo({ action: "Start", userId: user.userId, });
+      }
+    });
+  }
 
   const renderVideo = async (event: { action: "Start" | "Stop"; userId: number; }) => {
     const mediaStream = client.current.getMediaStream();
     if (event.action === "Stop") {
+      if (!activeUsersRef.current.includes(event.userId)) {
+        return;
+      }
+      activeUsersRef.current = activeUsersRef.current.filter((id) => id !== event.userId);
       const element = await mediaStream.detachVideo(event.userId);
       Array.isArray(element) ? element.forEach((el) => el.remove()) : element.remove();
     } else {
-      const userVideo = await mediaStream.attachVideo(event.userId, VideoQuality.Video_360P);
+      if (activeUsersRef.current.includes(event.userId)) {
+        return;
+      }
+      activeUsersRef.current.push(event.userId);
+      const userVideo = await mediaStream.attachVideo(event.userId, VideoQuality.Video_720P);
       videoContainerRef.current!.appendChild(userVideo as VideoPlayer);
     }
   };
@@ -54,19 +110,23 @@ const Videochat = (props: { slug: string; JWT: string }) => {
 
   return (
     <div className="flex h-full w-full flex-1 flex-col">
-      <h1 className="text-center text-3xl font-bold mb-4 mt-0">
-        Session: {session}
-      </h1>
       <div
         className="flex w-full flex-1"
         style={inSession ? {} : { display: "none" }}
       >
         {/* @ts-expect-error html component */}
-        <video-player-container ref={videoContainerRef} style={videoPlayerStyle} />
+        <video-player-container ref={videoContainerRef} style={videoPlayerStyle} >
+          <video id="video-me" className="active" ></video>
+          {/* <canvas id="canvas-me" ></canvas> */}
+        {/* @ts-expect-error html component */}
+        </video-player-container>
       </div>
       {!inSession ? (
         <div className="mx-auto flex w-64 flex-col self-center">
           <div className="w-4" />
+          <h1 className="text-center text-3xl font-bold mb-4 mt-0">
+            Session: {session}
+          </h1>
           <Button className="flex flex-1" onClick={joinSession} title="join session">
             Join
           </Button>
@@ -88,7 +148,7 @@ const Videochat = (props: { slug: string; JWT: string }) => {
             <Button onClick={leaveSession} title="leave session">
               <PhoneOff />
             </Button>
-            <Button onClick={leaveSession} title="">
+            <Button onClick={addShareVideoProcessor} title="">
               <ScreenShare />
             </Button>
           </div>

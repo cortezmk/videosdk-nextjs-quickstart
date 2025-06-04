@@ -95,3 +95,21 @@ video-player {
   height: auto;
   aspect-ratio: 16/9;
 }
+
+video-player-container video {
+  width: 0;
+  height: 0;
+}
+
+video-player-container video.active {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16/9;
+}
+
+video-player-container canvas
+ {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16/9;
+}
