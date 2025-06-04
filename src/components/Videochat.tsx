@@ -74,7 +74,7 @@ const Videochat = (props: { slug: string; JWT: string }) => {
   const tryRedrawSentShare = async (data: Uint8ClampedArray, width: number, height: number) => {
     const tempCanvas = new OffscreenCanvas(width, height);
     const tempCtx = tempCanvas.getContext('2d');
-    tempCtx!.imageSmoothingEnabled = false;
+    // tempCtx!.imageSmoothingEnabled = false;
     tempCtx!.imageSmoothingQuality = 'high';
     const imageData = new ImageData(data, width, height);
     tempCtx!.putImageData(imageData, 0, 0);
@@ -107,12 +107,12 @@ const Videochat = (props: { slug: string; JWT: string }) => {
     };
     const processor = await stream.createProcessor(params);
     videoProcessor.current = processor;
-    // const canvas = new OffscreenCanvas(1280, 720);
-    const canvas = document.getElementById('canvas-me') as HTMLCanvasElement;
+    const canvas = new OffscreenCanvas(1280, 720);
+    // const canvas = document.getElementById('canvas-me') as HTMLCanvasElement;
     canvas.width = 1280;  // Set width to 1080p
     canvas.height = 720;  //new OffscreenCanvas(1920, 1080);
     const ctx = canvas.getContext('2d');
-    ctx!.imageSmoothingEnabled = false;
+    // ctx!.imageSmoothingEnabled = false;
     ctx!.imageSmoothingQuality = 'high';
     const refreshRate = 1000/15;
     setInterval(async () => {
@@ -185,18 +185,18 @@ const Videochat = (props: { slug: string; JWT: string }) => {
 
   return (
     <div className="flex h-full w-full flex-1 flex-col">
-      
+      <video id="video-me" className="active" style={{ width: 1280, height: 720, display: 'none' }} ></video>
       <div
         className="flex w-full flex-1"
         style={inSession ? {} : { display: "none" }}
       >
         {/* @ts-expect-error html component */}
         <video-player-container ref={videoContainerRef} style={videoPlayerStyle} >
-          <video id="video-me" className="active" style={{ width: 1280, height: 720, display: 'none' }} ></video>
+          
           {/* <video id="standard-screen-share-video" className="active" />
           <canvas id="standard-screen-share-canvas" /> */}
-          <canvas id="test-canvas" />
-          <canvas id="canvas-me" ></canvas>
+          {/* <canvas id="test-canvas" />
+          <canvas id="canvas-me" ></canvas> */}
         {/* @ts-expect-error html component */}
         </video-player-container>
       </div>

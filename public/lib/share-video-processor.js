@@ -46,7 +46,7 @@ class ShareVideoProcessor extends VideoProcessor {
         tempCanvas.width = width;
         tempCanvas.height = height;
         const tempCtx = tempCanvas.getContext('2d');
-        tempCtx.imageSmoothingEnabled = false;
+        // tempCtx.imageSmoothingEnabled = false;
         tempCtx.imageSmoothingQuality = 'high';
         const imageData = new ImageData(data, width, height);
         tempCtx.putImageData(imageData, 0, 0);
@@ -56,7 +56,7 @@ class ShareVideoProcessor extends VideoProcessor {
         const context = output.getContext('2d');
         if (!context)
             return;
-        context.imageSmoothingEnabled = false;
+        // context.imageSmoothingEnabled = false;
         context.imageSmoothingQuality = 'high';
         if (this.sharedVideoFrame) {
             context.globalAlpha = 1;
