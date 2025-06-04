@@ -26,6 +26,42 @@ const Videochat = (props: { slug: string; JWT: string }) => {
   const shareVideoInterval = useRef<NodeJS.Timeout | null>(null);
   const videoProcessor = useRef<any>(null);
   const activeUsersRef = useRef<number[]>([]);
+  const standardShareActiveRef = useRef<boolean>(false);
+
+  const toggleStandardShare = async () => {
+    const video = document.getElementById('standard-screen-share-video') as HTMLVideoElement;
+    const stream = client.current.getMediaStream();
+    standardShareActiveRef.current = !standardShareActiveRef.current;
+    if (standardShareActiveRef.current) {
+      stream.startShareScreen(video);
+    } else {
+      stream.stopShareScreen();
+    }
+  }
+
+  const renderUserStandardShare = async () => {
+    client.current.getAllUser().forEach((user) => {
+      if (user.sharerOn) {
+        const stream = client.current.getMediaStream();
+        stream.startShareView(
+          document.getElementById('standard-screen-share-canvas') as HTMLCanvasElement,
+          user.userId
+        )
+      }
+    })
+    client.current.on('active-share-change', (payload) => {
+      const stream = client.current.getMediaStream();
+      if (payload.state === 'Active') {
+        stream.startShareView(
+          document.getElementById('standard-screen-share-canvas') as HTMLCanvasElement,
+          payload.userId
+        )
+      } else if (payload.state === 'Inactive') {
+        stream.stopShareView()
+      }
+    });
+
+  }
 
   const startShareVideo = async () => {
     const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
@@ -33,6 +69,31 @@ const Videochat = (props: { slug: string; JWT: string }) => {
     video.srcObject = stream;
     video.play();
     return video;
+  }
+
+  const tryRedrawSentShare = async (data: Uint8ClampedArray, width: number, height: number) => {
+    const tempCanvas = new OffscreenCanvas(width, height);
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCtx!.imageSmoothingEnabled = false;
+    tempCtx!.imageSmoothingQuality = 'high';
+    const imageData = new ImageData(data, width, height);
+    tempCtx!.putImageData(imageData, 0, 0);
+    const canvas = document.getElementById('test-canvas') as HTMLCanvasElement;
+    canvas.width = imageData.width;
+    canvas.height = imageData.height;
+    const ctx = canvas.getContext('2d');
+    ctx!.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height);
+  }
+
+  const tryRedrawImageData = async (imageData: ImageData) => {
+    const tempCanvas = new OffscreenCanvas(imageData.width, imageData.height);
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCtx!.putImageData(imageData, 0, 0);
+    const canvas = document.getElementById('test-canvas') as HTMLCanvasElement;
+    canvas.width = imageData.width;
+    canvas.height = imageData.height;
+    const ctx = canvas.getContext('2d');
+    ctx!.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height);
   }
 
   const addShareVideoProcessor = async () => {
@@ -46,15 +107,28 @@ const Videochat = (props: { slug: string; JWT: string }) => {
     };
     const processor = await stream.createProcessor(params);
     videoProcessor.current = processor;
-    const canvas = new OffscreenCanvas(1280, 720); //document.getElementById('canvas-me') as HTMLCanvasElement;
+    // const canvas = new OffscreenCanvas(1280, 720);
+    const canvas = document.getElementById('canvas-me') as HTMLCanvasElement;
     canvas.width = 1280;  // Set width to 1080p
     canvas.height = 720;  //new OffscreenCanvas(1920, 1080);
     const ctx = canvas.getContext('2d');
-    const refreshRate = 1000/20;
+    ctx!.imageSmoothingEnabled = false;
+    ctx!.imageSmoothingQuality = 'high';
+    const refreshRate = 1000/15;
     setInterval(async () => {
       ctx!.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const bitmap = await createImageBitmap(canvas);
-      processor.port.postMessage({ cmd: 'update_shared_video_frame', data: bitmap });
+      const imageData = ctx!.getImageData(0, 0, canvas.width, canvas.height);
+      const transferableData = new Uint8ClampedArray(imageData.data);
+      processor.port.postMessage({ 
+        cmd: 'update_shared_video_canvas', 
+        width: canvas.width,
+        height: canvas.height
+      });
+      const message = {
+        cmd: 'update_shared_video_data',
+        data: transferableData
+      };
+      processor.port.postMessage(message, [transferableData.buffer]);
     }, refreshRate);
     await stream.addProcessor(processor);
   }
@@ -72,6 +146,7 @@ const Videochat = (props: { slug: string; JWT: string }) => {
     setIsVideoMuted(!mediaStream.isCapturingVideo());
     // await renderVideo({ action: "Start", userId: client.current.getCurrentUserInfo().userId, });
     await addActiveUsers();
+    await renderUserStandardShare();
   };
 
   const addActiveUsers = async () => {
@@ -110,14 +185,18 @@ const Videochat = (props: { slug: string; JWT: string }) => {
 
   return (
     <div className="flex h-full w-full flex-1 flex-col">
+      
       <div
         className="flex w-full flex-1"
         style={inSession ? {} : { display: "none" }}
       >
         {/* @ts-expect-error html component */}
         <video-player-container ref={videoContainerRef} style={videoPlayerStyle} >
-          <video id="video-me" className="active" ></video>
-          {/* <canvas id="canvas-me" ></canvas> */}
+          <video id="video-me" className="active" style={{ width: 1280, height: 720, display: 'none' }} ></video>
+          {/* <video id="standard-screen-share-video" className="active" />
+          <canvas id="standard-screen-share-canvas" /> */}
+          <canvas id="test-canvas" />
+          <canvas id="canvas-me" ></canvas>
         {/* @ts-expect-error html component */}
         </video-player-container>
       </div>
@@ -151,6 +230,9 @@ const Videochat = (props: { slug: string; JWT: string }) => {
             <Button onClick={addShareVideoProcessor} title="">
               <ScreenShare />
             </Button>
+            <Button onClick={toggleStandardShare} title="">
+              <ScreenShare color="blue" />
+            </Button>
           </div>
         </div>
       )}
@@ -161,11 +243,5 @@ const Videochat = (props: { slug: string; JWT: string }) => {
 export default Videochat;
 
 const videoPlayerStyle = {
-  height: "75vh",
-  marginTop: "1.5rem",
-  marginLeft: "3rem",
-  marginRight: "3rem",
   alignContent: "center",
-  borderRadius: "10px",
-  overflow: "hidden",
 } as CSSProperties;

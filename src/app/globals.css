@@ -80,6 +80,7 @@ video-player-container {
   height: 100%;
   display: grid !important;
   grid-template-columns: repeat(1, minmax(0, 1fr));
+  box-sizing: border-box;
 }
 video-player-container:has(> :nth-child(2)) {
   grid-template-columns: repeat(2, minmax(0, 1fr));

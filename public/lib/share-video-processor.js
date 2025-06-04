@@ -5,10 +5,18 @@ class ShareVideoProcessor extends VideoProcessor {
         super(port, options);
         this.context = null;
         this.sharedVideoFrame = null;
+        this.sharedVideoCanvas = null;
+        this.pendingMetadata = null;
         // Create an image bitmap from a web image
         port.addEventListener('message', (e) => {
             if (e.data.cmd === 'update_shared_video_frame') {
                 this.updateSharedVideoFrame(e.data.data);
+            }
+            if (e.data.cmd === 'update_shared_video_canvas') {
+                this.pendingMetadata = e.data;
+            } else if (this.pendingMetadata && e.data.cmd === 'update_shared_video_data') {
+                this.updateSharedVideoCanvas(e.data.data, this.pendingMetadata.width, this.pendingMetadata.height);
+                this.pendingMetadata = null;
             }
         });
     }
@@ -32,13 +40,34 @@ class ShareVideoProcessor extends VideoProcessor {
     updateSharedVideoFrame(bitmap) {
         this.sharedVideoFrame = bitmap;
     }
+    updateSharedVideoCanvas(data, width, height) {
+        // Create a temporary canvas to draw the image data
+        const tempCanvas = new OffscreenCanvas(width, height);
+        tempCanvas.width = width;
+        tempCanvas.height = height;
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.imageSmoothingEnabled = false;
+        tempCtx.imageSmoothingQuality = 'high';
+        const imageData = new ImageData(data, width, height);
+        tempCtx.putImageData(imageData, 0, 0);
+        this.sharedVideoCanvas = tempCanvas;
+    }
     renderFrame(input, output) {
-        if (!this.context)
+        const context = output.getContext('2d');
+        if (!context)
             return;
+        context.imageSmoothingEnabled = false;
+        context.imageSmoothingQuality = 'high';
         if (this.sharedVideoFrame) {
-            this.context.globalAlpha = 1;
-            this.context.drawImage(this.sharedVideoFrame, 0, 0, output.width, output.height);
-            this.context.drawImage(input, 0, 0, output.width / 5, output.height / 5);
+            context.globalAlpha = 1;
+            context.drawImage(this.sharedVideoFrame, 0, 0, output.width, output.height);
+            context.drawImage(input, 0, 0, output.width / 5, output.height / 5);
+        }
+        if (this.sharedVideoCanvas) {
+            output.width = this.sharedVideoCanvas.width;
+            output.height = this.sharedVideoCanvas.height;
+            context.drawImage(this.sharedVideoCanvas, 0, 0, this.sharedVideoCanvas.width, this.sharedVideoCanvas.height);
+            context.drawImage(input, 0, 0, output.width / 5, output.height / 5);
         }
     }
 }
