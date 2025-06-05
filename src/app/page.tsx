@@ -10,13 +10,10 @@ export default function Home() {
   const router = useRouter();
   return (
     <main className="flex flex-col items-center justify-between p-24">
-      <h1 className="text-3xl font-bold text-center my-4">
-        Zoom VideoSDK Next.js Quickstart
-      </h1>
       <Input
         type="text"
         className="w-full max-w-xs"
-        placeholder="Session Name"
+        placeholder="Your Name"
         value={sessionName}
         onChange={(e) => setSessionName(e.target.value)}
       />

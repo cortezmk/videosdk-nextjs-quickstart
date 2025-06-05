@@ -42,16 +42,6 @@ const Videochat = (props: { slug: string; JWT: string }) => {
   }
 
   const renderUserStandardShare = async () => {
-    client.current.getAllUser().forEach((user) => {
-      if (user.sharerOn) {
-        setIsStandardShareRemoteVideo(true);
-        const stream = client.current.getMediaStream();
-        stream.startShareView(
-          document.getElementById('standard-screen-share-canvas') as HTMLCanvasElement,
-          user.userId
-        )
-      }
-    })
     client.current.on('active-share-change', (payload) => {
       const stream = client.current.getMediaStream();
       if (payload.state === 'Active') {
@@ -67,7 +57,16 @@ const Videochat = (props: { slug: string; JWT: string }) => {
         stream.stopShareView();
       }
     });
-
+    client.current.getAllUser().forEach((user) => {
+      if (user.sharerOn) {
+        setIsStandardShareRemoteVideo(true);
+        const stream = client.current.getMediaStream();
+        stream.startShareView(
+          document.getElementById('standard-screen-share-canvas') as HTMLCanvasElement,
+          user.userId
+        )
+      }
+    });
   }
 
   const startShareVideo = async () => {
