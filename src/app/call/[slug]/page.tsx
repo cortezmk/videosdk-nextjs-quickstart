@@ -13,4 +13,4 @@ export default async function Page(props: { params: Promise<{ slug: string }> })
       <Script src="/silentVisibilityChange.js" strategy="beforeInteractive" />
     </main>
   );
-}
+} 
