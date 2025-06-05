@@ -55,12 +55,14 @@ const Videochat = (props: { slug: string; JWT: string }) => {
     client.current.on('active-share-change', (payload) => {
       const stream = client.current.getMediaStream();
       if (payload.state === 'Active') {
+        console.log(`share screen active ${payload.userId}`);
         setIsStandardShareRemoteVideo(true);
         stream.startShareView(
           document.getElementById('standard-screen-share-canvas') as HTMLCanvasElement,
           payload.userId
         );
       } else if (payload.state === 'Inactive') {
+        console.log(`share screen inactive ${payload.userId}`);
         setIsStandardShareRemoteVideo(false);
         stream.stopShareView();
       }
