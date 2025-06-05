@@ -10,6 +10,7 @@ export default async function Page(props: { params: Promise<{ slug: string }> })
       {/* this component is defined separately as it imports the ZoomSDK and needs to be a client component */}
       <VideochatClientWrapper slug={params.slug} JWT={jwt} />
       <Script src="/coi-serviceworker.js" strategy="beforeInteractive" />
+      <Script src="/silentVisibilityChange.js" strategy="beforeInteractive" />
     </main>
   );
 }

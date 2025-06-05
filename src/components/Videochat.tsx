@@ -7,6 +7,7 @@ import ZoomVideo, {
   type VideoPlayer,
   type Stream,
   type ProcessorParams,
+  VideoProcessor,
   Processor
 } from "@zoom/videosdk";
 import { CameraButton, MicButton } from "./MuteButtons";
@@ -126,8 +127,10 @@ const Videochat = (props: { slug: string; JWT: string }) => {
         type: "video",
         url: window.location.origin + "/lib/share-video-processor.js",
         options: {},
+
       };
-      videoProcessor.current = await stream.createProcessor(params);
+      const processor = await stream.createProcessor(params);
+      videoProcessor.current = processor;
     }
     await stream.addProcessor(videoProcessor.current);
     const canvas = new OffscreenCanvas(1280, 720);
@@ -156,6 +159,9 @@ const Videochat = (props: { slug: string; JWT: string }) => {
   }
 
   const joinSession = async () => {
+    document.addEventListener("visibilitychange", (event) => {
+      console.log(`visibilitychange ${document.visibilityState}`);
+    });
     await client.current.init("en-US", "Global", { patchJsMedia: true, leaveOnPageUnload: true });
     client.current.on("peer-video-state-change", renderVideo);
     await client.current.join(session, jwt, userName)
