@@ -21,6 +21,11 @@ class ShareVideoProcessor extends VideoProcessor {
         });
     }
     async processFrame(input, output) {
+        const now = performance.now();
+        if (this.lastProcessTime) {
+            console.log(`Time between frames: ${now - this.lastProcessTime}ms`);
+        }
+        this.lastProcessTime = now;
         this.renderFrame(input, output);
         return true;
     }
