@@ -9,7 +9,7 @@ let events_to_block = [
   "hasFocus",
   "blur",
   "focus"
-]
+];
 
 for (let event_name of events_to_block) {
   document.addEventListener(event_name, function (event) {
