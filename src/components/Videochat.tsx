@@ -30,6 +30,7 @@ const Videochat = (props: { slug: string; JWT: string }) => {
   const activeUsersRef = useRef<number[]>([]);
   const shareActiveRef = useRef<boolean>(false);
   const sendShareScreenIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastFrameTimeRef = useRef<number>(0);
 
   const toggleStandardShare = async () => {
     const video = document.getElementById('standard-screen-share-video') as HTMLVideoElement;
@@ -130,9 +131,26 @@ const Videochat = (props: { slug: string; JWT: string }) => {
 
       };
       const processor = await stream.createProcessor(params);
+      processor.port.addEventListener('message', (e) => {
+        if(e.data.cmd === 'request_next_frame') {
+          sendNextFrame(video);
+        }
+      });
       videoProcessor.current = processor;
     }
     await stream.addProcessor(videoProcessor.current);
+    
+    const refreshRate = 1000/15;
+  }
+
+  const sendNextFrame = async (video: HTMLVideoElement) => {
+    const now = performance.now();
+    if (lastFrameTimeRef.current) {
+      const frameInterval = now - lastFrameTimeRef.current;
+      console.log(`Time between frames: ${frameInterval.toFixed(2)}ms`);
+    }
+    lastFrameTimeRef.current = now;
+
     const canvas = new OffscreenCanvas(1280, 720);
     // const canvas = document.getElementById('canvas-me') as HTMLCanvasElement;
     canvas.width = 1280;  // Set width to 1080p
@@ -140,22 +158,19 @@ const Videochat = (props: { slug: string; JWT: string }) => {
     const ctx = canvas.getContext('2d');
     // ctx!.imageSmoothingEnabled = false;
     ctx!.imageSmoothingQuality = 'high';
-    const refreshRate = 1000/15;
-    sendShareScreenIntervalRef.current = setInterval(async () => {
-      ctx!.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const imageData = ctx!.getImageData(0, 0, canvas.width, canvas.height);
-      const transferableData = new Uint8ClampedArray(imageData.data);
-      videoProcessor.current.port.postMessage({ 
-        cmd: 'update_shared_video_canvas', 
-        width: canvas.width,
-        height: canvas.height
-      });
-      const message = {
-        cmd: 'update_shared_video_data',
-        data: transferableData
-      };
-      videoProcessor.current.port.postMessage(message, [transferableData.buffer]);
-    }, refreshRate);
+    ctx!.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = ctx!.getImageData(0, 0, canvas.width, canvas.height);
+    const transferableData = new Uint8ClampedArray(imageData.data);
+    videoProcessor.current.port.postMessage({ 
+      cmd: 'update_shared_video_canvas', 
+      width: canvas.width,
+      height: canvas.height
+    });
+    const message = {
+      cmd: 'update_shared_video_data',
+      data: transferableData
+    };
+    videoProcessor.current.port.postMessage(message, [transferableData.buffer]);
   }
 
   const joinSession = async () => {

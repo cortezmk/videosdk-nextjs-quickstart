@@ -9,11 +9,6 @@ class ShareVideoProcessor extends VideoProcessor {
         this.pendingMetadata = null;
         // Create an image bitmap from a web image
         port.addEventListener('message', (e) => {
-            const now = performance.now();
-            if(this.lastMessageTime) {
-                console.log(`Time between messages: ${now - this.lastMessageTime}ms`);
-            }
-            this.lastMessageTime = now;
             if (e.data.cmd === 'update_shared_video_frame') {
                 this.updateSharedVideoFrame(e.data.data);
             }
@@ -26,11 +21,9 @@ class ShareVideoProcessor extends VideoProcessor {
         });
     }
     async processFrame(input, output) {
-        const now = performance.now();
-        if (this.lastProcessTime) {
-            console.log(`Time between frames: ${now - this.lastProcessTime}ms`);
-        }
-        this.lastProcessTime = now;
+        this.port.postMessage({
+            cmd: 'request_next_frame'
+        });
         this.renderFrame(input, output);
         return true;
     }
