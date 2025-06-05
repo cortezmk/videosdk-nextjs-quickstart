@@ -114,3 +114,12 @@ video-player-container canvas
   height: auto;
   aspect-ratio: 16/9;
 }
+
+#standard-screen-share-video {
+  border: 5px solid blue;
+}
+
+#standard-screen-share-canvas {
+  border: 5px solid blue;
+}
+

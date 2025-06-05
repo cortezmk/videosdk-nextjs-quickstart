@@ -41,6 +41,10 @@ class ShareVideoProcessor extends VideoProcessor {
         this.sharedVideoFrame = bitmap;
     }
     updateSharedVideoCanvas(data, width, height) {
+        if(!data) {
+            this.sharedVideoCanvas = null;
+            return;
+        }
         // Create a temporary canvas to draw the image data
         const tempCanvas = new OffscreenCanvas(width, height);
         tempCanvas.width = width;
@@ -58,16 +62,18 @@ class ShareVideoProcessor extends VideoProcessor {
             return;
         // context.imageSmoothingEnabled = false;
         context.imageSmoothingQuality = 'high';
-        if (this.sharedVideoFrame) {
-            context.globalAlpha = 1;
-            context.drawImage(this.sharedVideoFrame, 0, 0, output.width, output.height);
-            context.drawImage(input, 0, 0, output.width / 5, output.height / 5);
-        }
+        // if (this.sharedVideoFrame) {
+        //     context.globalAlpha = 1;
+        //     context.drawImage(this.sharedVideoFrame, 0, 0, output.width, output.height);
+        //     context.drawImage(input, 0, 0, output.width / 5, output.height / 5);
+        // }
         if (this.sharedVideoCanvas) {
             output.width = this.sharedVideoCanvas.width;
             output.height = this.sharedVideoCanvas.height;
             context.drawImage(this.sharedVideoCanvas, 0, 0, this.sharedVideoCanvas.width, this.sharedVideoCanvas.height);
             context.drawImage(input, 0, 0, output.width / 5, output.height / 5);
+        } else {
+            context.drawImage(input, 0, 0, output.width, output.height);
         }
     }
 }
