@@ -9,6 +9,11 @@ class ShareVideoProcessor extends VideoProcessor {
         this.pendingMetadata = null;
         // Create an image bitmap from a web image
         port.addEventListener('message', (e) => {
+            const now = performance.now();
+            if(this.lastMessageTime) {
+                console.log(`Time between messages: ${now - this.lastMessageTime}ms`);
+            }
+            this.lastMessageTime = now;
             if (e.data.cmd === 'update_shared_video_frame') {
                 this.updateSharedVideoFrame(e.data.data);
             }
