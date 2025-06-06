@@ -249,10 +249,10 @@ const Videochat = (props: { slug: string; JWT: string }) => {
       >
         {/* @ts-expect-error html component */}
         <video-player-container ref={videoContainerRef} style={videoPlayerStyle} >
-          <video id="standard-screen-share-video" className="active" style={{ display: isStandardShareVideo ? 'block' : 'none' }} />
+          {/* <video id="standard-screen-share-video" className="active" style={{ display: isStandardShareVideo ? 'block' : 'none' }} />
           <canvas id="standard-screen-share-canvas" style={{ display: isStandardShareRemoteVideo ? 'block' : 'none' }} />
           <canvas id="test-canvas" />
-          <canvas id="canvas-me" ></canvas>
+          <canvas id="canvas-me" ></canvas> */}
         {/* @ts-expect-error html component */}
         </video-player-container>
       </div>
