@@ -216,8 +216,20 @@ const Videochat = (props: { slug: string; JWT: string }) => {
         return;
       }
       activeUsersRef.current.push(event.userId);
-      const userVideo = await mediaStream.attachVideo(event.userId, VideoQuality.Video_720P);
-      videoContainerRef.current!.appendChild(userVideo as VideoPlayer);
+      const result = await mediaStream.attachVideo(event.userId, VideoQuality.Video_720P);
+      const userVideo = result as VideoPlayer;
+      if(userVideo) {
+        userVideo.addEventListener('dblclick', () => {
+          if(userVideo.classList.contains('maxed')) {
+            userVideo.classList.remove('maxed');
+            videoContainerRef.current!.classList.remove('maxed');
+          } else {
+            userVideo.classList.add('maxed');
+            videoContainerRef.current!.classList.add('maxed');
+          }
+        });
+        videoContainerRef.current!.appendChild(userVideo);
+      }
     }
   };
 
@@ -237,10 +249,10 @@ const Videochat = (props: { slug: string; JWT: string }) => {
       >
         {/* @ts-expect-error html component */}
         <video-player-container ref={videoContainerRef} style={videoPlayerStyle} >
-          {/* <video id="standard-screen-share-video" className="active" style={{ display: isStandardShareVideo ? 'block' : 'none' }} />
-          <canvas id="standard-screen-share-canvas" style={{ display: isStandardShareRemoteVideo ? 'block' : 'none' }} /> */}
-          {/* <canvas id="test-canvas" />
-          <canvas id="canvas-me" ></canvas> */}
+          <video id="standard-screen-share-video" className="active" style={{ display: isStandardShareVideo ? 'block' : 'none' }} />
+          <canvas id="standard-screen-share-canvas" style={{ display: isStandardShareRemoteVideo ? 'block' : 'none' }} />
+          <canvas id="test-canvas" />
+          <canvas id="canvas-me" ></canvas>
         {/* @ts-expect-error html component */}
         </video-player-container>
       </div>

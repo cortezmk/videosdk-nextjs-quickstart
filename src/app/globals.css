@@ -91,6 +91,10 @@ video-player-container:has(> :nth-child(5)) {
 video-player-container:has(> :nth-child(17)) {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
+video-player-container.maxed {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
 video-player {
   width: 100%;
   height: auto;
@@ -98,18 +102,42 @@ video-player {
 }
 
 video-player-container video {
-  width: 0;
-  height: 0;
-}
-
-video-player-container video.active {
   width: 100%;
   height: auto;
   aspect-ratio: 16/9;
 }
 
-video-player-container canvas
- {
+video-player-container canvas {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16/9;
+}
+
+video-player-container.maxed video-player {
+  display: none;
+}
+
+video-player-container.maxed video {
+  display: none;
+}
+
+video-player-container.maxed canvas {
+  display: none;
+}
+
+video-player-container.maxed video-player.maxed {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16/9;
+}
+
+video-player-container.maxed video.maxed {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16/9;
+}
+
+video-player-container.maxed canvas.maxed {
   width: 100%;
   height: auto;
   aspect-ratio: 16/9;
