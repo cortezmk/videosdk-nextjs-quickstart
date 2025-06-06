@@ -137,7 +137,10 @@ const Videochat = (props: { slug: string; JWT: string }) => {
       videoProcessor.current = processor;
     }
     await stream.addProcessor(videoProcessor.current);
-    
+    videoProcessor.current.port.postMessage({ 
+      cmd: 'update_user_name', 
+      userName: userName
+    });
     const refreshRate = 1000/15;
   }
 

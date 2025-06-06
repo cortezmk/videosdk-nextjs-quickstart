@@ -9,6 +9,9 @@ class ShareVideoProcessor extends VideoProcessor {
         this.pendingMetadata = null;
         // Create an image bitmap from a web image
         port.addEventListener('message', (e) => {
+            if (e.data.cmd === 'update_user_name') {
+                this.userName = e.data.userName;
+            }
             if (e.data.cmd === 'update_shared_video_frame') {
                 this.updateSharedVideoFrame(e.data.data);
             }
@@ -77,6 +80,11 @@ class ShareVideoProcessor extends VideoProcessor {
             context.drawImage(input, 0, 0, output.width / 5, output.height / 5);
         } else {
             context.drawImage(input, 0, 0, output.width, output.height);
+        }
+        if(this.userName) {
+            context.font = '32px Arial';
+            context.fillStyle = 'white';
+            context.fillText(this.userName, 10, output.height - 16);
         }
     }
 }
