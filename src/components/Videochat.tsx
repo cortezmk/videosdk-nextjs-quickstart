@@ -25,51 +25,51 @@ const Videochat = (props: { slug: string; JWT: string }) => {
   const [isStandardShareVideo, setIsStandardShareVideo] = useState(false);
   const [isStandardShareRemoteVideo, setIsStandardShareRemoteVideo] = useState(false);
   const videoContainerRef = useRef<HTMLDivElement>(null);
-  const shareVideoInterval = useRef<NodeJS.Timeout | null>(null);
   const videoProcessor = useRef<any>(null);
   const activeUsersRef = useRef<number[]>([]);
   const shareActiveRef = useRef<boolean>(false);
-  const sendShareScreenIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const lastFrameTimeRef = useRef<number>(0);
+  const lastFrameTimeRef = useRef<number>(performance.now());
+  const sharedVideoCanvasRef = useRef<OffscreenCanvas>(new OffscreenCanvas(1280, 720));
+  const frameRate = 1000/15;
 
-  const toggleStandardShare = async () => {
-    const video = document.getElementById('standard-screen-share-video') as HTMLVideoElement;
-    const stream = client.current.getMediaStream();
-    if (!isStandardShareVideo) {
-      stream.startShareScreen(video);
-    } else {
-      stream.stopShareScreen();
-    }
-    setIsStandardShareVideo(!isStandardShareVideo);
-  }
+  // const toggleStandardShare = async () => {
+  //   const video = document.getElementById('standard-screen-share-video') as HTMLVideoElement;
+  //   const stream = client.current.getMediaStream();
+  //   if (!isStandardShareVideo) {
+  //     stream.startShareScreen(video);
+  //   } else {
+  //     stream.stopShareScreen();
+  //   }
+  //   setIsStandardShareVideo(!isStandardShareVideo);
+  // }
 
-  const renderUserStandardShare = async () => {
-    client.current.on('active-share-change', (payload) => {
-      const stream = client.current.getMediaStream();
-      if (payload.state === 'Active') {
-        console.log(`share screen active ${payload.userId}`);
-        setIsStandardShareRemoteVideo(true);
-        stream.startShareView(
-          document.getElementById('standard-screen-share-canvas') as HTMLCanvasElement,
-          payload.userId
-        );
-      } else if (payload.state === 'Inactive') {
-        console.log(`share screen inactive ${payload.userId}`);
-        setIsStandardShareRemoteVideo(false);
-        stream.stopShareView();
-      }
-    });
-    client.current.getAllUser().forEach((user) => {
-      if (user.sharerOn) {
-        setIsStandardShareRemoteVideo(true);
-        const stream = client.current.getMediaStream();
-        stream.startShareView(
-          document.getElementById('standard-screen-share-canvas') as HTMLCanvasElement,
-          user.userId
-        )
-      }
-    });
-  }
+  // const renderUserStandardShare = async () => {
+  //   client.current.on('active-share-change', (payload) => {
+  //     const stream = client.current.getMediaStream();
+  //     if (payload.state === 'Active') {
+  //       console.log(`share screen active ${payload.userId}`);
+  //       setIsStandardShareRemoteVideo(true);
+  //       stream.startShareView(
+  //         document.getElementById('standard-screen-share-canvas') as HTMLCanvasElement,
+  //         payload.userId
+  //       );
+  //     } else if (payload.state === 'Inactive') {
+  //       console.log(`share screen inactive ${payload.userId}`);
+  //       setIsStandardShareRemoteVideo(false);
+  //       stream.stopShareView();
+  //     }
+  //   });
+  //   client.current.getAllUser().forEach((user) => {
+  //     if (user.sharerOn) {
+  //       setIsStandardShareRemoteVideo(true);
+  //       const stream = client.current.getMediaStream();
+  //       stream.startShareView(
+  //         document.getElementById('standard-screen-share-canvas') as HTMLCanvasElement,
+  //         user.userId
+  //       )
+  //     }
+  //   });
+  // }
 
   const startShareVideo = async () => {
     const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
@@ -105,6 +105,7 @@ const Videochat = (props: { slug: string; JWT: string }) => {
   // }
 
   const addShareVideoProcessor = async () => {
+    lastFrameTimeRef.current = performance.now() - frameRate;
     const stream = client.current.getMediaStream();
     if(shareActiveRef.current) {
       if(videoProcessor.current) {
@@ -115,9 +116,6 @@ const Videochat = (props: { slug: string; JWT: string }) => {
         await stream.removeProcessor(videoProcessor.current);
       }
       shareActiveRef.current = false;
-      if(sendShareScreenIntervalRef.current) {
-        clearInterval(sendShareScreenIntervalRef.current);
-      }
       return;
     }
     shareActiveRef.current = true;
@@ -145,16 +143,17 @@ const Videochat = (props: { slug: string; JWT: string }) => {
 
   const sendNextFrame = async (video: HTMLVideoElement) => {
     const now = performance.now();
-    if (lastFrameTimeRef.current) {
-      const frameInterval = now - lastFrameTimeRef.current;
-      console.log(`Time between frames: ${frameInterval.toFixed(2)}ms`);
+    const frameInterval = now - lastFrameTimeRef.current;
+    if(frameInterval < frameRate) {
+      return;
     }
-    lastFrameTimeRef.current = now;
+    lastFrameTimeRef.current = now + frameInterval - frameRate;
 
-    const canvas = new OffscreenCanvas(1280, 720);
-    // const canvas = document.getElementById('canvas-me') as HTMLCanvasElement;
-    canvas.width = 1280;  // Set width to 1080p
-    canvas.height = 720;  //new OffscreenCanvas(1920, 1080);
+    // const canvas = new OffscreenCanvas(1280, 720);
+    // // const canvas = document.getElementById('canvas-me') as HTMLCanvasElement;
+    // canvas.width = 1280;  // Set width to 1080p
+    // canvas.height = 720;  //new OffscreenCanvas(1920, 1080);
+    const canvas = sharedVideoCanvasRef.current;
     const ctx = canvas.getContext('2d');
     // ctx!.imageSmoothingEnabled = false;
     ctx!.imageSmoothingQuality = 'high';
@@ -189,7 +188,7 @@ const Videochat = (props: { slug: string; JWT: string }) => {
     setIsVideoMuted(!mediaStream.isCapturingVideo());
     // await renderVideo({ action: "Start", userId: client.current.getCurrentUserInfo().userId, });
     await addActiveUsers();
-    await renderUserStandardShare();
+    // await renderUserStandardShare();
   };
 
   const addActiveUsers = async () => {
@@ -235,8 +234,8 @@ const Videochat = (props: { slug: string; JWT: string }) => {
       >
         {/* @ts-expect-error html component */}
         <video-player-container ref={videoContainerRef} style={videoPlayerStyle} >
-          <video id="standard-screen-share-video" className="active" style={{ display: isStandardShareVideo ? 'block' : 'none' }} />
-          <canvas id="standard-screen-share-canvas" style={{ display: isStandardShareRemoteVideo ? 'block' : 'none' }} />
+          {/* <video id="standard-screen-share-video" className="active" style={{ display: isStandardShareVideo ? 'block' : 'none' }} />
+          <canvas id="standard-screen-share-canvas" style={{ display: isStandardShareRemoteVideo ? 'block' : 'none' }} /> */}
           {/* <canvas id="test-canvas" />
           <canvas id="canvas-me" ></canvas> */}
         {/* @ts-expect-error html component */}
@@ -272,9 +271,9 @@ const Videochat = (props: { slug: string; JWT: string }) => {
             <Button onClick={addShareVideoProcessor} title="">
               <ScreenShare />
             </Button>
-            <Button onClick={toggleStandardShare} title="">
+            {/* <Button onClick={toggleStandardShare} title="">
               <ScreenShare color="blue" />
-            </Button>
+            </Button> */}
           </div>
         </div>
       )}
