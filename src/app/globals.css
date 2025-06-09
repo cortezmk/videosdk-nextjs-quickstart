@@ -98,18 +98,19 @@ video-player-container.maxed {
 video-player,
 video-player-container video,
 video-player-container canvas,
-video-player-container.maxed video-player.maxed,
-video-player-container.maxed video.maxed,
-video-player-container.maxed canvas.maxed {
+video-player-container.maxed video-player.maxed {
+/* video-player-container.maxed video.maxed,
+video-player-container.maxed canvas.maxed { */
   width: 100%;
   height: auto;
   aspect-ratio: 16/9;
+  display: block !important;
 }
 
-video-player-container.maxed video-player,
-video-player-container.maxed video,
-video-player-container.maxed canvas {
-  display: none;
+video-player-container.maxed video-player {
+/* video-player-container.maxed video,
+video-player-container.maxed canvas { */
+  display: none !important;
 }
 
 #standard-screen-share-video,
