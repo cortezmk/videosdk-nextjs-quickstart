@@ -6,20 +6,12 @@ class ShareVideoProcessor extends VideoProcessor {
         this.context = null;
         this.sharedVideoFrame = null;
         this.sharedVideoCanvas = null;
-        this.pendingMetadata = null;
-        // Create an image bitmap from a web image
         port.addEventListener('message', (e) => {
             if (e.data.cmd === 'update_user_name') {
                 this.userName = e.data.userName;
             }
-            if (e.data.cmd === 'update_shared_video_frame') {
-                this.updateSharedVideoFrame(e.data.data);
-            }
-            if (e.data.cmd === 'update_shared_video_canvas') {
-                this.pendingMetadata = e.data;
-            } else if (this.pendingMetadata && e.data.cmd === 'update_shared_video_data') {
-                this.updateSharedVideoCanvas(e.data.data, this.pendingMetadata.width, this.pendingMetadata.height);
-                this.pendingMetadata = null;
+            if (e.data.cmd === 'update_shared_video_data') {
+                this.updateSharedVideoCanvas(e.data.data, e.data.width, e.data.height);
             }
         });
     }
@@ -31,7 +23,6 @@ class ShareVideoProcessor extends VideoProcessor {
         return true;
     }
     onInit() {
-        // @ts-ignore: getOutput is provided by the SDK
         const canvas = this.getOutput();
         if (canvas) {
             this.context = canvas.getContext('2d');
@@ -43,20 +34,15 @@ class ShareVideoProcessor extends VideoProcessor {
     onUninit() {
         this.context = null;
     }
-    updateSharedVideoFrame(bitmap) {
-        this.sharedVideoFrame = bitmap;
-    }
     updateSharedVideoCanvas(data, width, height) {
         if(!data) {
             this.sharedVideoCanvas = null;
             return;
         }
-        // Create a temporary canvas to draw the image data
         const tempCanvas = new OffscreenCanvas(width, height);
         tempCanvas.width = width;
         tempCanvas.height = height;
         const tempCtx = tempCanvas.getContext('2d');
-        // tempCtx.imageSmoothingEnabled = false;
         tempCtx.imageSmoothingQuality = 'high';
         const imageData = new ImageData(data, width, height);
         tempCtx.putImageData(imageData, 0, 0);
@@ -66,13 +52,7 @@ class ShareVideoProcessor extends VideoProcessor {
         const context = output.getContext('2d');
         if (!context)
             return;
-        // context.imageSmoothingEnabled = false;
         context.imageSmoothingQuality = 'high';
-        // if (this.sharedVideoFrame) {
-        //     context.globalAlpha = 1;
-        //     context.drawImage(this.sharedVideoFrame, 0, 0, output.width, output.height);
-        //     context.drawImage(input, 0, 0, output.width / 5, output.height / 5);
-        // }
         if (this.sharedVideoCanvas) {
             output.width = this.sharedVideoCanvas.width;
             output.height = this.sharedVideoCanvas.height;

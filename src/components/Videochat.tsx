@@ -5,10 +5,7 @@ import ZoomVideo, {
   type VideoClient,
   VideoQuality,
   type VideoPlayer,
-  type Stream,
   type ProcessorParams,
-  VideoProcessor,
-  Processor
 } from "@zoom/videosdk";
 import { CameraButton, MicButton } from "./MuteButtons";
 import { PhoneOff, ScreenShare } from "lucide-react";
@@ -22,8 +19,6 @@ const Videochat = (props: { slug: string; JWT: string }) => {
   const client = useRef<typeof VideoClient>(ZoomVideo.createClient());
   const [isVideoMuted, setIsVideoMuted] = useState(!client.current.getCurrentUserInfo()?.bVideoOn);
   const [isAudioMuted, setIsAudioMuted] = useState(client.current.getCurrentUserInfo()?.muted ?? true);
-  const [isStandardShareVideo, setIsStandardShareVideo] = useState(false);
-  const [isStandardShareRemoteVideo, setIsStandardShareRemoteVideo] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const videoProcessor = useRef<any>(null);
@@ -33,45 +28,6 @@ const Videochat = (props: { slug: string; JWT: string }) => {
   const sharedVideoCanvasRef = useRef<OffscreenCanvas>(new OffscreenCanvas(1280, 720));
   const frameRate = 1000/15;
 
-  // const toggleStandardShare = async () => {
-  //   const video = document.getElementById('standard-screen-share-video') as HTMLVideoElement;
-  //   const stream = client.current.getMediaStream();
-  //   if (!isStandardShareVideo) {
-  //     stream.startShareScreen(video);
-  //   } else {
-  //     stream.stopShareScreen();
-  //   }
-  //   setIsStandardShareVideo(!isStandardShareVideo);
-  // }
-
-  // const renderUserStandardShare = async () => {
-  //   client.current.on('active-share-change', (payload) => {
-  //     const stream = client.current.getMediaStream();
-  //     if (payload.state === 'Active') {
-  //       console.log(`share screen active ${payload.userId}`);
-  //       setIsStandardShareRemoteVideo(true);
-  //       stream.startShareView(
-  //         document.getElementById('standard-screen-share-canvas') as HTMLCanvasElement,
-  //         payload.userId
-  //       );
-  //     } else if (payload.state === 'Inactive') {
-  //       console.log(`share screen inactive ${payload.userId}`);
-  //       setIsStandardShareRemoteVideo(false);
-  //       stream.stopShareView();
-  //     }
-  //   });
-  //   client.current.getAllUser().forEach((user) => {
-  //     if (user.sharerOn) {
-  //       setIsStandardShareRemoteVideo(true);
-  //       const stream = client.current.getMediaStream();
-  //       stream.startShareView(
-  //         document.getElementById('standard-screen-share-canvas') as HTMLCanvasElement,
-  //         user.userId
-  //       )
-  //     }
-  //   });
-  // }
-
   const startShareVideo = async () => {
     const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
     const video = document.getElementById('video-me') as HTMLVideoElement;
@@ -79,31 +35,6 @@ const Videochat = (props: { slug: string; JWT: string }) => {
     video.play();
     return video;
   }
-
-  // const tryRedrawSentShare = async (data: Uint8ClampedArray, width: number, height: number) => {
-  //   const tempCanvas = new OffscreenCanvas(width, height);
-  //   const tempCtx = tempCanvas.getContext('2d');
-  //   // tempCtx!.imageSmoothingEnabled = false;
-  //   tempCtx!.imageSmoothingQuality = 'high';
-  //   const imageData = new ImageData(data, width, height);
-  //   tempCtx!.putImageData(imageData, 0, 0);
-  //   const canvas = document.getElementById('test-canvas') as HTMLCanvasElement;
-  //   canvas.width = imageData.width;
-  //   canvas.height = imageData.height;
-  //   const ctx = canvas.getContext('2d');
-  //   ctx!.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height);
-  // }
-
-  // const tryRedrawImageData = async (imageData: ImageData) => {
-  //   const tempCanvas = new OffscreenCanvas(imageData.width, imageData.height);
-  //   const tempCtx = tempCanvas.getContext('2d');
-  //   tempCtx!.putImageData(imageData, 0, 0);
-  //   const canvas = document.getElementById('test-canvas') as HTMLCanvasElement;
-  //   canvas.width = imageData.width;
-  //   canvas.height = imageData.height;
-  //   const ctx = canvas.getContext('2d');
-  //   ctx!.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height);
-  // }
 
   const addShareVideoProcessor = async () => {
     lastFrameTimeRef.current = performance.now();
@@ -142,7 +73,6 @@ const Videochat = (props: { slug: string; JWT: string }) => {
       cmd: 'update_user_name', 
       userName: userName
     });
-    const refreshRate = 1000/15;
   }
 
   const sendNextFrame = async (video: HTMLVideoElement) => {
@@ -153,26 +83,17 @@ const Videochat = (props: { slug: string; JWT: string }) => {
       return;
     }
     lastFrameTimeRef.current = now - Math.min(frameRate, frameInterval - frameRate);
-
-    // const canvas = new OffscreenCanvas(1280, 720);
-    // // const canvas = document.getElementById('canvas-me') as HTMLCanvasElement;
-    // canvas.width = 1280;  // Set width to 1080p
-    // canvas.height = 720;  //new OffscreenCanvas(1920, 1080);
     const canvas = sharedVideoCanvasRef.current;
     const ctx = canvas.getContext('2d');
-    // ctx!.imageSmoothingEnabled = false;
     ctx!.imageSmoothingQuality = 'high';
     ctx!.drawImage(video, 0, 0, canvas.width, canvas.height);
     const imageData = ctx!.getImageData(0, 0, canvas.width, canvas.height);
     const transferableData = new Uint8ClampedArray(imageData.data);
-    videoProcessor.current.port.postMessage({ 
-      cmd: 'update_shared_video_canvas', 
-      width: canvas.width,
-      height: canvas.height
-    });
     const message = {
       cmd: 'update_shared_video_data',
-      data: transferableData
+      data: transferableData,
+      width: canvas.width,
+      height: canvas.height
     };
     videoProcessor.current.port.postMessage(message, [transferableData.buffer]);
   }
@@ -191,9 +112,7 @@ const Videochat = (props: { slug: string; JWT: string }) => {
     setIsAudioMuted(mediaStream.isAudioMuted());
     await mediaStream.startVideo({ hd: true });
     setIsVideoMuted(!mediaStream.isCapturingVideo());
-    // await renderVideo({ action: "Start", userId: client.current.getCurrentUserInfo().userId, });
     await addActiveUsers();
-    // await renderUserStandardShare();
   };
 
   const addActiveUsers = async () => {
@@ -238,7 +157,6 @@ const Videochat = (props: { slug: string; JWT: string }) => {
   const leaveSession = async () => {
     client.current.off("peer-video-state-change", renderVideo);
     await client.current.leave().catch((e) => console.log("leave error", e));
-    // hard refresh to clear the state
     window.location.href = "/";
   };
 
@@ -262,10 +180,6 @@ const Videochat = (props: { slug: string; JWT: string }) => {
       >
         {/* @ts-expect-error html component */}
         <video-player-container ref={videoContainerRef} style={videoPlayerStyle} >
-          {/* <video id="standard-screen-share-video" className="active" style={{ display: isStandardShareVideo ? 'block' : 'none' }} />
-          <canvas id="standard-screen-share-canvas" style={{ display: isStandardShareRemoteVideo ? 'block' : 'none' }} />
-          <canvas id="test-canvas" />
-          <canvas id="canvas-me" ></canvas> */}
         {/* @ts-expect-error html component */}
         </video-player-container>
       </div>
@@ -302,9 +216,6 @@ const Videochat = (props: { slug: string; JWT: string }) => {
             <Button onClick={toggleRecord} title="record">
               {isRecording ? "STOP RECORDING" : "START RECORDING"}
             </Button>
-            {/* <Button onClick={toggleStandardShare} title="">
-              <ScreenShare color="blue" />
-            </Button> */}
           </div>
         </div>
       )}
