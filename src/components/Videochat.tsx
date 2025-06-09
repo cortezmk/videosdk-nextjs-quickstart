@@ -152,7 +152,7 @@ const Videochat = (props: { slug: string; JWT: string }) => {
     if(frameInterval < frameRate) {
       return;
     }
-    lastFrameTimeRef.current = now;
+    lastFrameTimeRef.current = now - Math.min(frameRate, frameInterval - frameRate);
 
     // const canvas = new OffscreenCanvas(1280, 720);
     // // const canvas = document.getElementById('canvas-me') as HTMLCanvasElement;
@@ -189,7 +189,7 @@ const Videochat = (props: { slug: string; JWT: string }) => {
     const mediaStream = client.current.getMediaStream();
     await mediaStream.startAudio();
     setIsAudioMuted(mediaStream.isAudioMuted());
-    await mediaStream.startVideo();
+    await mediaStream.startVideo({ hd: true });
     setIsVideoMuted(!mediaStream.isCapturingVideo());
     // await renderVideo({ action: "Start", userId: client.current.getCurrentUserInfo().userId, });
     await addActiveUsers();
