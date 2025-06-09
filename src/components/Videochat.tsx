@@ -106,7 +106,7 @@ const Videochat = (props: { slug: string; JWT: string }) => {
   // }
 
   const addShareVideoProcessor = async () => {
-    lastFrameTimeRef.current = performance.now() - frameRate;
+    lastFrameTimeRef.current = performance.now();
     const stream = client.current.getMediaStream();
     if(shareActiveRef.current) {
       if(videoProcessor.current) {
@@ -148,10 +148,11 @@ const Videochat = (props: { slug: string; JWT: string }) => {
   const sendNextFrame = async (video: HTMLVideoElement) => {
     const now = performance.now();
     const frameInterval = now - lastFrameTimeRef.current;
+    console.log(`interval: ${frameInterval} now: ${now} lastFrameTimeRef: ${lastFrameTimeRef.current}`);
     if(frameInterval < frameRate) {
       return;
     }
-    lastFrameTimeRef.current = now + frameInterval - frameRate;
+    lastFrameTimeRef.current = now;
 
     // const canvas = new OffscreenCanvas(1280, 720);
     // // const canvas = document.getElementById('canvas-me') as HTMLCanvasElement;
