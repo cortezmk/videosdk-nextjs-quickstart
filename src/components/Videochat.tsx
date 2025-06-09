@@ -24,6 +24,7 @@ const Videochat = (props: { slug: string; JWT: string }) => {
   const [isAudioMuted, setIsAudioMuted] = useState(client.current.getCurrentUserInfo()?.muted ?? true);
   const [isStandardShareVideo, setIsStandardShareVideo] = useState(false);
   const [isStandardShareRemoteVideo, setIsStandardShareRemoteVideo] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const videoProcessor = useRef<any>(null);
   const activeUsersRef = useRef<number[]>([]);
@@ -240,6 +241,17 @@ const Videochat = (props: { slug: string; JWT: string }) => {
     window.location.href = "/";
   };
 
+  const toggleRecord = async () => {
+    const recordingClient = client.current.getRecordingClient();
+    if(!isRecording) {
+      const result = await recordingClient.startCloudRecording();
+      console.log("startCloudRecording ", result);
+    } else {
+      await recordingClient.stopCloudRecording();
+    }
+    setIsRecording(!isRecording);
+  }
+
   return (
     <div className="flex h-full w-full flex-1 flex-col">
       <video id="video-me" className="active" style={{ width: 1280, height: 720, display: 'none' }} ></video>
@@ -285,6 +297,9 @@ const Videochat = (props: { slug: string; JWT: string }) => {
             </Button>
             <Button onClick={addShareVideoProcessor} title="">
               <ScreenShare />
+            </Button>
+            <Button onClick={toggleRecord} title="record">
+              {isRecording ? "STOP RECORDING" : "START RECORDING"}
             </Button>
             {/* <Button onClick={toggleStandardShare} title="">
               <ScreenShare color="blue" />
